@@ -9,7 +9,55 @@
 #include "bvh.h"
 #include "myrandom.h"
 #include "hit.h"
-#include "ggx.h"
+#include "brdf.h"
+
+#ifdef USE_DEBUG
+Vec3 Debug_ao(const Ray& ray, Accel& accel) {
+    Ray nextRay = ray;
+    Vec3 I(0,0,0), weight(1,1,1);
+    return I;
+    // !implementing now!
+}
+Vec3 Debug_normal(const Ray& ray, Accel& accel) {
+    Ray nextRay = ray;
+    Vec3 I(0,0,0);
+
+    std::shared_ptr<Figure> shape;
+    Hit hit;
+    shape = accel.intersect(nextRay, hit, 0, nodes);
+
+    I.x = 0.5 + 0.5 * hit.hitNormal.x;
+    I.y = 0.5 + 0.5 * hit.hitNormal.y;
+    I.z = 0.5 + 0.5 * hit.hitNormal.z;
+
+    return I;
+}
+Vec3 Debug_depth(const Ray& ray, Accel& accel) {
+    Ray nextRay = ray;
+    int depth = 0;
+    double Prr = 1.0;
+    Vec3 dir;
+    std::shared_ptr<Figure> shape;
+    for(;;depth++) {
+        Hit hit;
+        shape = accel.intersect(nextRay, hit, 0, nodes);
+        if(shape != nullptr) {
+            Vec3 orienting_normal = dot(nextRay.direction, hit.hitNormal) > 0 ? -1*hit.hitNormal : hit.hitNormal;
+            dir = randomHemisphere(orienting_normal);
+            nextRay = Ray(hit.hitPos, dir);
+            double u = rnd();
+            if(Prr < rnd()) {
+                break;
+            }
+            Prr *= 0.8;
+        }
+        else{
+            break;
+        }
+    }
+    return Vec3(1,1,1) * Prr;
+}
+#endif
 
 Vec3 getColor(const Ray &ray,const IBL &ibl,Accel& accels)
 {
@@ -97,53 +145,39 @@ Vec3 getColor(const Ray &ray,const IBL &ibl,Accel& accels)
                     break;
 
                 case 2://dielectric
-                {
-                    Vec3 ref_dir = reflect(nextRay.direction,orienting_normal);
-                    const bool into = dot(hit.hitNormal, orienting_normal)>0.0;
-
-                    const double nc = 1.0;
-                    const double nt = 1.48;
-                    const double nnt = into ? nc/nt : nt/nc;
-                    const double ddn = dot(nextRay.direction, orienting_normal);
-                    const double cos2t = 1.0 - nnt*nnt*(1.0-ddn*ddn);
-
-                    if(cos2t < 0.0)
-                    {
-                        dir = ref_dir;
-                        costerm = std::abs(dot(dir,orienting_normal));
-                        bsdf = nowobjcolor*(1/costerm);
+                {   
+                    is_specular = true;
+                    double u = rnd();
+                    bool in = (dot(hit.hitNormal, orienting_normal) > 0);
+                    double nt = in? 1.5 : 1.0;
+                    double ni = in? 1.0 : 1.5;
+                    double costhetaI = dot(orienting_normal, -1 * nextRay.direction);
+                    double sinthetaT = ni/nt * std::sqrt(std::max(1 - costhetaI * costhetaI,0.0));
+                    if(sinthetaT >= 1) { // total reflect
                         pdf = 1.0;
-                        is_specular = true;
-                        break;
+                        dir = reflect(nextRay.direction, orienting_normal);
+                        //if(std::abs( dot(dir, orienting_normal) - dot(orienting_normal, -1*nextRay.direction)) >= 1e-8) std::cout << "fail reflect" << std::endl;
+                        costerm = std::abs(dot(dir, orienting_normal));
+                        bsdf = nowobjcolor / costerm;
                     }
-
-                    Vec3 trans_dir =  normalize(nextRay.direction * nnt - hit.hitNormal * (into ? 1.0 : -1.0) * (ddn * nnt + sqrt(cos2t)));
-                    const double a = nt-nc, b = nt+nc;
-                    const double R0 = (a*a)/(b*b);
-                    const double c = 1.0 - (into ? -ddn : dot(trans_dir, -1.0*orienting_normal));
-                    const double Re = R0 + (1-R0) * std::pow(c, 5);
-                    const double nnt2 = pow(into? nc/nt : nt/nc, 2);
-                    const double Tr = (1-Re)*nnt2;
-
-                    const double prob = 0.25 + 0.5 * Re;
-                    if(rnd() < prob)//reflection
-                    {
-                        dir = ref_dir;
-                        costerm = std::abs(dot(orienting_normal,dir));
-                        bsdf = nowobjcolor*Re*(1/costerm);
-                        pdf = prob;
-                        is_specular = true;
-                        break;
+                    else {
+                        double costhetaT = std::sqrt(1 - sinthetaT*sinthetaT);
+                        double Fr = F_die(costhetaI, 1.0 , 1.5);
+                        double u = rnd();
+                        if(u < Fr) {
+                            pdf = Fr;
+                            dir = reflect(nextRay.direction, orienting_normal);
+                            costerm = std::abs(dot(dir, orienting_normal));
+                            bsdf = Fr * nowobjcolor / costerm;
+                        }
+                        else {
+                            pdf = 1.0 - Fr;
+                            dir = refract(-1*nextRay.direction, orienting_normal, costhetaI, costhetaT, ni/nt);
+                            costerm = std::abs(dot(dir, orienting_normal));
+                            bsdf = (ni*ni)/(nt*nt) * (1.0 - Fr) / costerm * nowobjcolor;
+                        }
                     }
-                    else //retraction
-                    {
-                        dir = trans_dir;
-                        costerm = std::abs(dot(orienting_normal,dir));
-                        bsdf = nowobjcolor*Tr*(1/costerm);
-                        pdf = 1-prob;
-                        is_specular = true;
-                        break;
-                    }
+                    break;
                 }
                 case 3://GGX - rough - specular
                 {
@@ -194,6 +228,7 @@ Vec3 getColor(const Ray &ray,const IBL &ibl,Accel& accels)
             //////////
             nextRay = Ray(hit.hitPos, dir);//次のRay
             weight = weight * bsdf * costerm * (1 / pdf);//ウェイトの更新 
+            if(isNan(weight)) std::cout << "hahaha" << std::endl;
             Prr *= 0.96;//ロシアンルーレットの確率を決める.
         
             if(rnd() >= Prr)//ロシアンルーレットの開始だ!!

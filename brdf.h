@@ -15,6 +15,10 @@ double F(const double ni, const Vec3& o, const Vec3& h)
             (1 + (c*(g+c)-1)*(c*(g+c)-1)/(c*(g-c)+1)/(c*(g-c)+1));
 }
 
+double F_die(const double& cos, const double n_ob, const double n_v) {
+    double R = (n_ob - n_v)*(n_ob - n_v) / (n_ob + n_v)/(n_ob + n_v);
+    return R + (1 - R) * std::pow(1-cos, 5);
+}
 Vec3 F(const double cost, const Vec3& R)
 {
     return R + (Vec3(1,1,1) - R) * std::pow(1 - cost, 5);

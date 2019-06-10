@@ -93,6 +93,10 @@ Vec3 reflect(const Vec3 &d, const Vec3 &n)
     return d - 2 * dot(d, n) * n;
 }
 
+Vec3 refract(const Vec3& wi, const Vec3& n, const double& costhetaI, const double& costhetaT, const double& eta) {
+    return eta * -1 * wi + (eta * costhetaI - costhetaT) * n;
+}
+
 void orthonormalBasis(const Vec3 &n, Vec3 &x, Vec3 &z)
 {
     if (n.x > 0.9)
