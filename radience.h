@@ -17,6 +17,23 @@ Vec3 Debug_ao(const Ray& ray, Accel& accel) {
     Vec3 I(0,0,0), weight(1,1,1);
     return I;
     // !implementing now!
+        Hit hit;
+        std::shared_ptr<Figure> shape = accel.intersect(nextRay, hit, 0, nodes);
+        double pdf;
+        if(shape) {
+            Vec3 orienting_normal = dot(nextRay.direction, hit.hitNormal) > 0 ? -1*hit.hitNormal : hit.hitNormal;
+            Vec3 shadow_dir = randomCosineHemisphere(orienting_normal);
+            Ray shadowRay(hit.hitPos, shadow_dir);
+            std::shared_ptr<Figure> shadow_shape  = accel.intersect(shadowRay, hit, 0, nodes); 
+            if(shadow_shape && hit.hitShape->light != nullptr && dot(hit.hitNormal, shadowRay.direction) < 0) {
+                pdf = std::abs(dot(shadowRay.direction, orienting_normal)) / M_PI;
+                return Vec3(1,1,1) * std::abs(dot(shadowRay.direction, orienting_normal)) * 1/ pdf * 1 / M_PI;
+            }
+            return Vec3(0,0,0);
+        }
+        else {
+            return Vec3(0,0,0);
+        }
 }
 Vec3 Debug_normal(const Ray& ray, Accel& accel) {
     Ray nextRay = ray;
@@ -58,7 +75,8 @@ Vec3 Debug_depth(const Ray& ray, Accel& accel) {
     return Vec3(1,1,1) * Prr;
 }
 #endif
-
+// thoroughput を利用した形に書き換えたい
+//
 Vec3 getColor(const Ray &ray,const IBL &ibl,Accel& accels)
 {
     Vec3 I = Vec3(0,0,0);
@@ -97,9 +115,12 @@ Vec3 getColor(const Ray &ray,const IBL &ibl,Accel& accels)
                 I = I + mis_weight * weight * hit.hitShape->light->radi_intencity(c_o_s);//NEEの時はコメントアウト
             }
             
+            
             const Vec3 orienting_normal = dot(-1*nextRay.direction,hit.hitNormal)>0 ? hit.hitNormal : -1.0*hit.hitNormal;
             const Vec3 nowobjcolor = hit.hitShape->texture->getColor1(hit.u,hit.v,hit.hitPos);
             ////////マテリアルごとにbsdf,dir(入射光の方向),pdf,cos項を求める.
+
+            Vec3 tmp_weight(0,0,0);
             switch(hit.hitShape->material)
             {
                 case 0://diffuse
@@ -130,7 +151,8 @@ Vec3 getColor(const Ray &ray,const IBL &ibl,Accel& accels)
                             double mis_weight = pa/(bsdf_pdf + pa);
 
                             double G = std::abs(dot(shadow_hit.hitNormal,normalize(hit.hitPos - x_l)))*std::abs(dot(orienting_normal,normalize(x_l - hit.hitPos))) / pow(length_xl_x,2);
-                            I = I +  mis_weight * weight * accels.light[i]->light->radi_intencity(-1*dot(shadowRay.direction,shadow_hit.hitNormal)) * bsdf * G *(1/pa);
+                            //I = I +  mis_weight * weight * accels.light[i]->light->radi_intencity(-1*dot(shadowRay.direction,shadow_hit.hitNormal)) * bsdf * G *(1/pa);
+                            tmp_weight = tmp_weight +  mis_weight * weight * accels.light[i]->light->radi_intencity(-1*dot(shadowRay.direction,shadow_hit.hitNormal)) * bsdf * G *(1/pa);
                         }
                     }
                     /////////
@@ -218,7 +240,8 @@ Vec3 getColor(const Ray &ray,const IBL &ibl,Accel& accels)
 
                             Vec3 _bsdf = F(dot(-1*nextRay.direction, nee_halfv), nowobjcolor) * G(nee_dir, -1*nextRay.direction, orienting_normal, alpha_g) * D_GGX(nee_halfv, orienting_normal, alpha_g) / dot(nee_dir, orienting_normal) / dot(-1*nextRay.direction,orienting_normal) / 4;
                             double G_nee = std::abs(dot(shadow_hit.hitNormal,normalize(hit.hitPos - x_l)))*std::abs(dot(orienting_normal,normalize(x_l - hit.hitPos))) / pow(length_xl_x,2);
-                            I = I + mis_weight * weight * accels.light[i]->light->radi_intencity(-1*dot(shadowRay.direction,shadow_hit.hitNormal)) * _bsdf * G_nee *(1/pa);
+                            // I = I + mis_weight * weight * accels.light[i]->light->radi_intencity(-1*dot(shadowRay.direction,shadow_hit.hitNormal)) * _bsdf * G_nee *(1/pa);
+                            tmp_weight = tmp_weight + mis_weight * weight * accels.light[i]->light->radi_intencity(-1*dot(shadowRay.direction,shadow_hit.hitNormal)) * _bsdf * G_nee *(1/pa);
                         }
                     }
                     /////////
@@ -235,6 +258,7 @@ Vec3 getColor(const Ray &ray,const IBL &ibl,Accel& accels)
             {
                 break;
             }
+            I = I + tmp_weight;
             weight = (1/Prr)*weight;//ウェイトにロシアンルーレットの確率を反映させる.
             if(weight == Vec3()) 
             {

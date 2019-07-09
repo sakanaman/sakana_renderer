@@ -17,7 +17,7 @@ class BVHnode
         int children[2];
         std::deque<std::shared_ptr<Figure>> polygons;
 };
-
+//todo: parallelize or implement QBVH....
 BVHnode nodes[100000];
 
 double surfaceArea(const double bbox[2][3])

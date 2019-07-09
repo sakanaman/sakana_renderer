@@ -15,7 +15,7 @@
 #include "bvh.h"
 #include "obj.h"
 #include "light.h"
-//#define USE_DEBUG
+#define USE_DEBUG
 #include "radience.h"
 
 Accel accel;
@@ -105,9 +105,9 @@ int main()
                 #ifndef USE_DEBUG
                 accumulated_radiance = accumulated_radiance + getColor(ray, ibl,accel) / samples;
                 #else
-                accumulated_radiance = accumulated_radiance + Debug_normal(ray, accel) / samples;
+                //accumulated_radiance = accumulated_radiance + Debug_normal(ray, accel) / samples;
                 //accumulated_radiance = accumulated_radiance + Debug_depth(ray, accel) / samples;
-                //accumulated_radiance = accumulated_radiance + Debug_ao(ray, accel) / samples;
+                accumulated_radiance = accumulated_radiance + Debug_ao(ray, accel) / samples;
                 #endif
             }
             img.data[image_index] = img.data[image_index] + accumulated_radiance;
