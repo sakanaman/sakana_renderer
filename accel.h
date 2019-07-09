@@ -48,49 +48,34 @@ class Accel
     }
 
     //fixme: わざわざfigureへのポインタを返すのはメモリの無駄使い
-    std::shared_ptr<Figure> intersect(const Ray& ray, Hit &hit, int index, BVHnode* node)
-    {
-        if (intersectAABBvsRay(node[index].bbox, ray))
-        {   
-            
-            if(node[index].children[1] != -1) //中間ノード
-            {
-                std::shared_ptr<Figure> childResult = nullptr;
-                std::shared_ptr<Figure> result; 
-                for(int i=0; i<2; i++)
-                {
-                    result = intersect(ray, hit, node[index].children[i],node);
-                    if (result != nullptr)
-                    {
-                        childResult = result; 
-                    }
-                }
-                if (childResult != nullptr) return childResult;
-            }
-            else // 葉ノード
-            {
-                std::shared_ptr<Figure> result = nullptr;
+    bool intersect(const Ray& ray, Hit& hit, int index, BVHnode* node) {
+        bool is_hit_aabb = intersectAABBvsRay(node[index].bbox, ray);
+
+        if(!is_hit_aabb) { //AABBに当たらなかった
+            return false;
+        }
+        else {
+            if(node[index].children[1] == -1) { //葉ノード
                 Hit hit_each;
-                for(auto p : node[index].polygons)
-                {
-                    
-                    if(p->intersect(ray, hit_each))
-                    {
-                        if (hit_each.t < hit.t)
-                        {
-                            result = p;
+                bool is_hit = false;
+                for(auto& p : node[index].polygons) {
+                    if(p->intersect(ray, hit_each)) {
+                        if(hit_each.t < hit.t) {
                             hit = hit_each;
                         }
+                        is_hit = true;
                     }
                 }
-                if (result != nullptr) return result;
+                return is_hit;
+            }
+            else { //中間ノード
+
+                bool is_hit1 = intersect(ray, hit, node[index].children[0], node);
+                bool is_hit2 = intersect(ray, hit, node[index].children[1], node);
+
+                return is_hit2 || is_hit1;
             }
         }
-        else
-        {
-
-        }
-        return nullptr;
     }
 };
 #endif
