@@ -35,25 +35,25 @@ int main()
     accel.add(std::make_shared<Tri>(Vec3(-4, -4, 2), Vec3(4, -4, -8), Vec3(4, -4, 2),
                                     std::make_shared<UniformTexture>(Vec3(0.75,0.75,0.75)), 0, nullptr)); //下の地面2
     accel.add(std::make_shared<Tri>(Vec3(-4, -4, 2), Vec3(-4, 4, 2), Vec3(-4, -4, -8),
-                                    std::make_shared<UniformTexture>(Vec3(0.75, 0.25, 0.25)), 0, nullptr)); //左横の面1
+                                    std::make_shared<UniformTexture>(Vec3(231.0/255, 222.0/255, 67.0/255)), 0, nullptr)); //左横の面1
     accel.add(std::make_shared<Tri>(Vec3(-4, 4, 2), Vec3(-4, -4, -8), Vec3(-4, 4, -8),
-                                    std::make_shared<UniformTexture>(Vec3(0.75,0.25,0.25)), 0, nullptr)); //左横の面2
+                                    std::make_shared<UniformTexture>(Vec3(231.0/255,222.0/255, 67.0/255)), 0, nullptr)); //左横の面2
     accel.add(std::make_shared<Tri>(Vec3(4, -4, 2), Vec3(4, 4, 2), Vec3(4, -4, -8),
-                                    std::make_shared<UniformTexture>(Vec3(0.25, 0.25, 0.75)), 0, nullptr)); //右横の面1
+                                    std::make_shared<UniformTexture>(Vec3(74.0/255.0, 131.0/255.0, 197.0/255.0)), 0, nullptr)); //右横の面1
     accel.add(std::make_shared<Tri>(Vec3(4, 4, 2), Vec3(4, -4, -8), Vec3(4, 4, -8),
-                                    std::make_shared<UniformTexture>(Vec3(0.25,0.25,0.75)), 0, nullptr)); //右横の地面2
+                                    std::make_shared<UniformTexture>(Vec3(74.0/255.0, 131.0/255.0, 197.0/255.0)), 0, nullptr)); //右横の地面2
     accel.add(std::make_shared<Tri>(Vec3(-4, 4, 2), Vec3(4, 4, -8), Vec3(4, 4, 2),
                                     std::make_shared<UniformTexture>(Vec3(0.75,0.75,0.75)), 0, nullptr)); //上の面1
     accel.add(std::make_shared<Tri>(Vec3(-4, 4, 2), Vec3(4, 4, -8), Vec3(-4, 4, -8),
                                     std::make_shared<UniformTexture>(Vec3(0.75,0.75,0.75)), 0, nullptr)); //上の面2
      accel.add(std::make_shared<Tri>(Vec3(-4, -4, 2), Vec3(-4, 4, 2), Vec3(4, 4, 2),
-                                  std::make_shared<UniformTexture>(Vec3(0.75,0.75,0.75)), 0, nullptr)); //奥の面1
+                                  std::make_shared<CheckerTexture>(Vec3(0.75,0.75,0.75), Vec3(0.1,0.1,0.1)), 0, nullptr)); //奥の面1
      accel.add(std::make_shared<Tri>(Vec3(4, 4, 2), Vec3(4, -4, 2), Vec3(-4, -4, 2),
-                                     std::make_shared<UniformTexture>(Vec3(0.75,0.75,0.75)), 0, nullptr)); //奥の面2
-    // accel.add(std::make_shared<Sphere>(Vec3(2.3,-2.3,-1.5),1.7,
-    //                                     std::make_shared<UniformTexture>(Vec3(0.99,0.99,0.99)),2, nullptr));
-    // accel.add(std::make_shared<Sphere>(Vec3(-2.3,-2.3, 0.3),1.7,
-    //                                     std::make_shared<UniformTexture>(Vec3(0.99,0.99,0.99)),3, nullptr));
+                                     std::make_shared<CheckerTexture>(Vec3(0.75,0.75,0.75), Vec3(0.1,0.1,0.1)), 0, nullptr)); //奥の面2
+    accel.add(std::make_shared<Sphere>(Vec3(2.3,-2.3,-1.5),1.7,
+                                        std::make_shared<UniformTexture>(Vec3(0.99,0.99,0.99)),2, nullptr));
+    accel.add(std::make_shared<Sphere>(Vec3(-2.3,-2.3, 0.3),1.7,
+                                        std::make_shared<UniformTexture>(Vec3(0.99,0.99,0.99)),3, nullptr));
     accel.add(std::make_shared<Tri>(Vec3(-4,3.99,2),Vec3(0,3.99,-0.5),Vec3(-4,3.99,-8),
                                     std::make_shared<UniformTexture>(Vec3()), 0,
                                     std::make_shared<Isotropic_Light>(2)));
@@ -71,18 +71,22 @@ int main()
     //                                     std::make_shared<Isotropic_Light>(5)));
     
     
+    // accel.add(std::make_shared<Sphere>(Vec3(0.4,-2.3, -1.5), 0.1,
+    //                                  std::make_shared<UniformTexture>(Vec3()),0,
+    //                                  std::make_shared<Isotropic_Light>(30)));
+
     //bunnyちゃん
-    TriangleMesh mesh;
-    double scale = 1.2;
-    input_obj("object/bunny.obj", mesh, scale);
-    for(int i = 0; i < mesh.num_shapes; i++)
-    {
-        Vec3 a = mesh.as[i]-Vec3(-0.2,3.2,1);
-        Vec3 b = mesh.bs[i]-Vec3(-0.2,3.2,1);
-        Vec3 c = mesh.cs[i]-Vec3(-0.2,3.2,1);
-        accel.add(std::make_shared<Tri>(a, b, c,
-                    std::make_shared<UniformTexture>(Vec3( 0.0, 128.0/255.0, 84.0/255.0)), 2, nullptr));
-    }
+    // TriangleMesh mesh;
+    // double scale = 1.2;
+    // input_obj("object/bunny.obj", mesh, scale);
+    // for(int i = 0; i < mesh.num_shapes; i++)
+    // {
+    //     Vec3 a = mesh.as[i]-Vec3(-0.2,3.592,1);//3.592
+    //     Vec3 b = mesh.bs[i]-Vec3(-0.2,3.592,1);
+    //     Vec3 c = mesh.cs[i]-Vec3(-0.2,3.592,1);
+    //     accel.add(std::make_shared<Tri>(a, b, c,
+    //                 std::make_shared<UniformTexture>(Vec3( 0.25, 0.75, 0.25)), 3, nullptr));
+    // }
     constructBVH(accel.shapes);
     accel.build_light();
 #pragma omp parallel for schedule(dynamic, 1) num_threads(4)

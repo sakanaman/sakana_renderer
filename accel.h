@@ -47,7 +47,7 @@ class Accel
         return std::lower_bound(light_cdf.begin(), light_cdf.end(), u) - light_cdf.begin();
     }
 
-    //fixme: わざわざfigureへのポインタを返すのはメモリの無駄使い
+    
     bool intersect(const Ray& ray, Hit& hit, int index, BVHnode* node) {
         bool is_hit_aabb = intersectAABBvsRay(node[index].bbox, ray);
 

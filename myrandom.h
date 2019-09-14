@@ -55,7 +55,6 @@ Vec3 randomsphere()
     double y = rnd2();
     double phi = rnd() * 2 * M_PI;
     double x = sqrt(1-y*y)*cos(phi);
-    y = y;
     double z = sqrt(1-y*y)*sin(phi);
     return Vec3(x,y,z);
 }
